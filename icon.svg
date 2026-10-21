@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Verification Gate">
+  <path d="M32 4 56 13v19c0 14-10.2 24.6-24 28C18.2 56.6 8 46 8 32V13L32 4Z" fill="none" stroke="#4f7cff" stroke-width="3.2" stroke-linejoin="round"/>
+  <path d="M32 10.6 50.4 17.6v14.6c0 11-7.9 19.5-18.4 22.4-10.5-2.9-18.4-11.4-18.4-22.4V17.6L32 10.6Z" fill="#4f7cff" opacity="0.10"/>
+  <path d="M21.5 32.5 28.6 39.6 43 25.2" fill="none" stroke="#4f7cff" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M14 47.5h36" stroke="#4f7cff" stroke-width="2.2" stroke-linecap="round" opacity="0.55"/>
+</svg>

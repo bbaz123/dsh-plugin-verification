@@ -1,0 +1,93 @@
+# dsh-plugin-verification bundle patch.
+#
+# Mounts ONE host-plane row. The row publishes no service of its own and needs
+# no isolate realm; it injects the host registries it contributes to:
+#
+#   tools         -> verification_run / verification_status / verification_finalize,
+#                    the monotonic guard used while the task is blocked, and the
+#                    controlled tool-execution entry used for OpenViking retrieval
+#   systemPrompt  -> the `verification:policy` section stating the gate contract
+#
+# It deliberately does NOT inject `openvikingMemory`: the memory read path goes
+# through whatever OpenViking tool surface the profile actually mounts (verified
+# at runtime against that tool's live schema), and the gate must stay loadable —
+# and honestly report `unavailable` — when the memory plugin is absent.
+#
+# Install:  plugin_manager install_bundle  (target = this package directory)
+# Uninstall: remove the bundle from the profile; the row and its listeners go
+#            with it, and no state outside the plugin's own storage directory
+#            is left behind.
+- insert:
+    - id: verification-gate
+      # Node-resolvable package name — must stay in sync with package.json `name`.
+      name: 'dsh-plugin-verification'
+      config:
+        # ── master switch ───────────────────────────────────────────────────
+        # enforce: findings block the turn and force the repair loop.
+        # observe: the full pipeline still runs, but nothing is ever blocking
+        #          and no repair packet is injected (evidence collection only).
+        # off:     the row stays mounted and does nothing.
+        enabled: true
+        mode: enforce
+
+        # ── verification (§10.1 `verification:`) ────────────────────────────
+        defaultMode: regression
+        maxRepairCycles: 3
+        failFast: true
+        unknownRequiredCheck: block
+        baselinePolicy: new-failures
+        sameFailureNoProgressLimit: 2
+
+        # ── baseline (§10.1 `baseline:`) ────────────────────────────────────
+        baselineStrategy: snapshot-lazy
+        preserveInitialWorkspace: true
+        executeInIsolatedCopy: true
+
+        # ── memory (§10.1 `memory:`) ────────────────────────────────────────
+        memoryBinding: existing-openviking
+        memoryRequiredBeforeRepair: true
+        # block: a failed/unavailable retrieval stops the automatic repair loop.
+        # degrade: the user may continue, and the exception is recorded.
+        memoryOnReadFailure: block
+        memoryMaxExperiences: 5
+        memoryTimeoutMs: 5000
+        memoryRetries: 1
+        # Substring match against the *live* registered tool names. The gate
+        # verifies the matched tool's real schema before calling it and never
+        # guesses parameter names.
+        memoryToolPattern: 'openviking'
+
+        # ── review (§10.1 `review:`) ────────────────────────────────────────
+        reviewEnabled: true
+        reviewRequireCurrentEvidence: true
+
+        # ── finalization (§10.1 `finalization:`) ────────────────────────────
+        finalizationBridgeExistingGlobalRules: true
+        finalizationVerifyMemoryReadback: true
+        finalizationOnMemoryWriteFailure: report-partial
+
+        # ── execution (§10.1 `execution:`) ──────────────────────────────────
+        executionAutoInstallDependencies: false
+        # 2026-10-16：120000 → 360000。本项目唯一的声明检查就是 `pnpm test`
+        # （= 完整离线清单），实测 **127 秒**（21:02:25→21:04:32，exit 0，55/0），
+        # 而 120 秒预算比它**还短** → 门禁每次都判 `timed_out`，报"环境问题、不是代码证据"。
+        # 这不是"把门禁调松"：超时只是让**真实执行**来得及跑完，检查内容、断言与通过标准一个字没改。
+        # 360 秒给出约 2.8 倍余量（离线清单还在长；本轮又新增了 NSDSH 两条检查）。
+        # 若将来清单继续变长，应优先**拆批/并行**压回 120 秒内，而不是继续加这个数。
+        executionCommandTimeoutMs: 360000
+        executionMaxCapturedOutputBytes: 2097152
+
+        # ── local placement ─────────────────────────────────────────────────
+        # '' -> $DSH_HOME/storages/verification-gate (plugin-managed directory:
+        # EvidenceStore, snapshot material, caches and ledgers never live inside
+        # the verified project).
+        storageDir: ''
+        # '' -> the session's workspace root reported by the sandbox policy.
+        projectRoot: ''
+        # A project whose toolchain V1 does not support is skipped, not failed:
+        # this workspace aggregates several projects and has no root manifest.
+        requireDetectedProject: true
+        # While the task is blocked, mutating tools are denied until the block is
+        # explicitly released with verification_run.
+        blockMutatingToolsWhileBlocked: true
+        maxObservedToolResults: 200

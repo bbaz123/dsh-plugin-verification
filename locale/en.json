@@ -1,0 +1,4 @@
+{
+  "title": "Verification Gate",
+  "description": "Runs Change → Memory → Regression → Assertion → Review before a turn closes; a confirmed problem is recorded in a task ledger, checked against OpenViking first, and handed back as a repair packet."
+}

@@ -1,0 +1,4 @@
+{
+  "title": "DSH 验证门",
+  "description": "在 turn 关闭前执行 变化分析 → 经验检索 → 回归 → 断言 → 只读审查；确认的问题先记入任务账本、经强制 OpenViking 检索后，再以修复包交回 Agent。"
+}
