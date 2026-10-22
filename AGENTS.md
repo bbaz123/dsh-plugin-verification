@@ -64,6 +64,11 @@ Agent 的通用行为规则在 `~/.dsh/AGENTS.md`；工作区级说明在上级 
 - **任务阻塞期间修改类工具被拒绝**；解除阻塞只能由用户明确要求后调用 `verification_run(release=true)`。
 - **不递归**：`agent/turn-stopping` 只在根会话运行（`ctx.agents.roots()`）；读不到根信息时跳过门，而不是判断子会话。
 - **插件不得把状态写进被验证的项目目录**；证据、快照、报告只落在 `storageDir`。
+- **非 git 项目默认 fail-closed**：`currentFacts` 读不到 HEAD 时必须报
+  `FINGERPRINT_UNAVAILABLE`，不得把“没有 git”当成“没有改动”。只有显式
+  `allowNonGitBaseline: true` 才允许回退到有界全树哈希；回退必须使用与基线相同的
+  文件枚举/排除规则（`.git`、`node_modules`、`artifacts`、构建产物等），且 lazy baseline
+  的隔离工作树仍缺 HEAD 时如实报“基线不可用”，不得伪造。
 
 ## 修改原则
 
@@ -80,7 +85,7 @@ Agent 的通用行为规则在 `~/.dsh/AGENTS.md`；工作区级说明在上级 
 ## 构建 / 测试 / 检查命令
 
 ```powershell
-npm test              # 133 个用例（离线，不需要 DSH）
+npm test              # 137 个用例（离线，不需要 DSH）
 npm run test:offline  # 显式子集；完整门禁以 npm test 为准
 node --check lib/index.js
 npm run check         # 语法检查 + 全部用例

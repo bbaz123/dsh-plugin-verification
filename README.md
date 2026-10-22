@@ -79,12 +79,19 @@ memoryRequiredBeforeRepair: true
 memoryOnReadFailure: block                # 检索失败即阻塞
 memoryToolPattern: openviking             # 用于在运行时发现 OpenViking 工具
 memorySearchTool: ''                      # 精确指定工具名（留空则按 pattern + search 语义发现）
+allowNonGitBaseline: false                # 非 git 项目是否允许有界全树哈希回退（默认 fail-closed）
 storageDir: ''           # 留空 -> $DSH_HOME/storages/verification-gate
 requireDetectedProject: true              # 检测不到支持的项目就不介入（聚合工作区先尝试识别唯一子项目）
 blockMutatingToolsWhileBlocked: true
 ```
 
 嵌套写法（把方案里的 `verification:` / `memory:` 等分组直接抄进 `config`）也会被归一化接受。
+
+**非 git 项目**：默认仍是 fail-closed——`currentFacts` 读不到 `git rev-parse HEAD` 就报
+`FINGERPRINT_UNAVAILABLE`，不会把“没有 git”当成“没有改动”。如果项目本身**有意不使用 git**，
+显式设 `allowNonGitBaseline: true`：门会扫描并哈希有界的工作区文件树（跳过 `.git`、`node_modules`、
+`artifacts`、构建产物等），用同一份全树哈希做基线/当前对比。注意此时 lazy baseline 的隔离工作树
+仍需要 git HEAD，只有在当前检查失败、需要构建基线侧时才会退化为“基线不可用”的如实报告。
 
 ### 工作区根是「容器」时（聚合工作区）
 
@@ -146,7 +153,7 @@ dsh --profile web --dump-config        # 退出码 0，且包含 id: verificatio
 ## 六、开发与验证
 
 ```powershell
-npm test              # 133 个用例：配置、协议、存储、比较、适配器、端到端管线、full-suite 映射（不需要 DSH）
+npm test              # 137 个用例：配置、协议、存储、比较、适配器、端到端管线、full-suite 映射、非 git 基线（不需要 DSH）
 npm run test:offline  # 显式子集；完整门禁以 npm test 为准
 npm run check         # 语法检查 + 全部用例
 npm run verify        # 装配验证（需要 DSH 安装以检查 profile 链接）

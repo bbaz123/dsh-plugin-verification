@@ -40,6 +40,10 @@
 
         # ── baseline (§10.1 `baseline:`) ────────────────────────────────────
         baselineStrategy: snapshot-lazy
+        # Non-git repositories fail closed by default (FINGERPRINT_UNAVAILABLE).
+        # Set true only for a workspace that intentionally has no .git: the gate
+        # then fingerprints a bounded full-tree hash instead of `git status`.
+        allowNonGitBaseline: false
         preserveInitialWorkspace: true
         executeInIsolatedCopy: true
 
